@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>恐龍數數樂園</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Huninn&display=swap">
+<style>
+/* Layout: 一頁三關。上方黏性導覽，每關是一張大卡片，插圖放在像窗戶一樣的草地場景裡。 */
+:root{
+  --bg:#E4F3FF; --card:#FFFFFF; --ink:#1D2B4A; --muted:#55658A; --line:#C3DCEF;
+  --one:#D63A6C; --one-d:#9E2149; --one-t:#C42C5E;
+  --many:#1F78E0; --many-d:#1555A8; --many-t:#1A66C4;
+  --grass:#278A41; --sun:#FFC933; --sun-d:#D49A00;
+  --ok:#23813D; --bad:#D8383E;
+  --scene-top:#BFE6FF; --scene-ground:#9BDB7A;
+  --font-display:"Fredoka","Huninn","Noto Sans TC",sans-serif;
+  --font-body:"Huninn","Fredoka","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1A31; --card:#1A2847; --ink:#EEF3FF; --muted:#A8B7D8; --line:#2D4068;
+    --one-t:#FF86AB; --many-t:#74B6FF; --ok:#5ED184; --bad:#FF7A80; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1A31; --card:#1A2847; --ink:#EEF3FF; --muted:#A8B7D8; --line:#2D4068;
+  --one-t:#FF86AB; --many-t:#74B6FF; --ok:#5ED184; --bad:#FF7A80; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.6;padding-inline:16px}
+.wrap{max-width:780px;margin-inline:auto;padding-block:8px 48px}
+h1,h2,h3{font-family:var(--font-display);margin:0;line-height:1.2;text-wrap:balance}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+b{font-weight:700}
+.one-t{color:var(--one-t)} .many-t{color:var(--many-t)}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-block:10px;margin-inline:-16px;padding-inline:16px;border-bottom:2px solid var(--line)}
+.nav .tabs{display:flex;gap:8px;flex:1;flex-wrap:wrap;min-width:0}
+.tab{border:2px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;min-height:40px;font-weight:600}
+.tab:hover{border-color:var(--many)}
+.snd{border:2px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;min-height:40px;display:flex;gap:6px;align-items:center}
+.snd[aria-pressed="false"]{opacity:.65}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1fr;gap:16px;padding-block:22px 6px;align-items:center}
+@media (min-width:640px){.hero{grid-template-columns:1fr 1.25fr}}
+h1{font-size:clamp(2.1rem,8vw,3.3rem);font-weight:700;letter-spacing:.02em}
+.hl{background:linear-gradient(transparent 62%,var(--sun) 62% 92%,transparent 92%);padding-inline:.05em}
+.lead{margin:10px 0 0;color:var(--muted);max-width:30em}
+.scene{position:relative;aspect-ratio:6/5;border-radius:20px;overflow:hidden;border:2px solid var(--line);
+  background:radial-gradient(circle 20px at 88% 15%,#FFE27A 96%,transparent 100%),linear-gradient(var(--scene-top) 0 84%,var(--scene-ground) 84%)}
+.scene svg{display:block;width:100%;height:100%}
+.scene.wide{aspect-ratio:12/5}
+.scene.big{max-width:460px;margin-inline:auto;width:100%}
+
+/* stages */
+.stage{margin-top:34px;scroll-margin-top:72px}
+.stage-title{display:flex;gap:12px;align-items:center;font-size:clamp(1.2rem,4.6vw,1.65rem);font-weight:600;margin-bottom:14px}
+.badge{flex:none;width:46px;height:46px;border-radius:14px;background:var(--sun);color:#1D2B4A;font-family:var(--font-display);font-weight:700;font-size:1.6rem;display:grid;place-items:center;transform:rotate(-5deg);box-shadow:0 4px 0 var(--sun-d)}
+.stage-title em{font-style:normal}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.panel{background:var(--card);border:2px solid var(--line);border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel .scene{border-radius:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* buttons */
+.btn{border:0;border-radius:999px;padding:10px 20px;min-height:48px;font-weight:700;font-size:1.05rem;color:#fff;background:var(--many);box-shadow:0 4px 0 var(--many-d);transition:transform .08s,box-shadow .08s}
+.btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--many-d)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.one{background:var(--one);box-shadow:0 4px 0 var(--one-d)}
+.btn.one:active:not(:disabled){box-shadow:0 1px 0 var(--one-d)}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn.tiny{flex:1;min-height:44px;padding:8px 6px;font-size:1.05rem}
+.spk{flex:none;width:42px;height:42px;border-radius:50%;border:2px solid var(--line);background:var(--card);display:grid;place-items:center;color:var(--many-t)}
+.spk:hover{border-color:var(--many)}
+
+/* stage 1 */
+.say{display:flex;gap:12px;align-items:center;min-height:68px}
+.count{flex:none;width:56px;height:56px;border-radius:50%;background:var(--sun);color:#1D2B4A;font-family:var(--font-display);font-weight:700;font-size:1.9rem;display:grid;place-items:center}
+.say-text{flex:1;min-width:0}
+.say-en{font-family:var(--font-display);font-weight:600;font-size:1.65rem;line-height:1.2}
+.say-zh{color:var(--muted);font-size:.95rem}
+.say-zh b{color:var(--ink)}
+.tray{display:flex;flex-wrap:wrap;gap:8px;min-height:64px;padding:10px;border-radius:16px;background:var(--bg);border:2px dashed var(--line)}
+.blk{width:46px;height:46px;border-radius:10px;color:#fff;font-family:var(--font-display);font-weight:700;font-size:1.3rem;display:grid;place-items:center;box-shadow:inset -4px -4px 0 rgba(0,0,0,.18),inset 3px 3px 0 rgba(255,255,255,.22)}
+.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes shake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+@keyframes hop{30%{transform:translateY(-10px)}60%{transform:translateY(0)}80%{transform:translateY(-4px)}}
+.shake{animation:shake .35s}
+.hop{animation:hop .55s}
+
+/* stage 2 */
+.game{gap:14px}
+.game-top{display:flex;justify-content:space-between;gap:10px;font-weight:600;color:var(--muted)}
+.stars{color:#B87F00;font-family:var(--font-display)}
+.ask{margin:0;text-align:center;font-size:1.1rem}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.choice{border:0;border-radius:20px;color:#fff;padding:12px 8px;min-height:104px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;font-weight:700}
+.choice.c-one{background:var(--one);box-shadow:0 5px 0 var(--one-d)}
+.choice.c-many{background:var(--many);box-shadow:0 5px 0 var(--many-d)}
+.choice:active{transform:translateY(3px)}
+.choice .big{font-size:1.45rem;font-family:var(--font-display);line-height:1.1}
+.choice .sub{font-size:.9rem;opacity:.92;font-weight:500}
+.mini{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:90px}
+.mini i{width:16px;height:16px;border-radius:4px;background:#fff;opacity:.92}
+.result{min-height:52px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;text-align:center}
+.ok-mark{color:var(--ok);font-weight:700;font-size:1.15rem}
+.lbl{font-family:var(--font-display);font-size:1.5rem;font-weight:600}
+.lbl.one{color:var(--one-t)} .lbl.many{color:var(--many-t)}
+.hint{color:var(--bad);font-weight:600}
+.next{align-self:center}
+.sub-title{font-size:1.2rem;margin:22px 0 10px}
+.album{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.slot{border:2px solid var(--line);background:var(--card);border-radius:16px;padding:6px;display:flex;flex-direction:column;gap:4px;min-width:0;text-align:center}
+.slot .scene{border-radius:10px}
+.slot figcaption,.slot .cap{font-size:.82rem;line-height:1.25;font-weight:600;overflow-wrap:anywhere}
+.slot.lock{border-style:dashed;background:transparent}
+.slot.lock .ph{aspect-ratio:6/5;display:grid;place-items:center;font-family:var(--font-display);font-size:2rem;color:var(--muted)}
+button.slot:hover{border-color:var(--many)}
+
+/* stage 3 */
+.rule{align-items:stretch}
+.bubble{border-radius:18px;background:var(--bg);padding:10px 14px;font-size:1.05rem;position:relative}
+.bubble b{font-family:var(--font-display);font-size:1.25rem}
+.sentence{font-family:var(--font-display);font-weight:700;font-size:1.7rem}
+.quiz{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:12px}
+.q{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:10px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.q.ok{border-color:var(--ok)}
+.q .scene{border-radius:12px}
+.qbtns{display:flex;gap:8px}
+.qres{margin:0;min-height:2.6em;font-family:var(--font-display);font-weight:600;font-size:1.1rem;line-height:1.3;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.qres.bad{color:var(--bad);font-family:var(--font-body);font-size:.95rem}
+.qres.good{color:var(--ok)}
+.qdone{margin:16px 0 0;text-align:center;font-weight:700;font-size:1.2rem;color:var(--ok);font-family:var(--font-display)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<main class="wrap">
+  <nav class="nav" aria-label="關卡">
+    <div class="tabs">
+      <button class="tab" type="button" data-go="s1">1 認識</button>
+      <button class="tab" type="button" data-go="s2">2 找一找</button>
+      <button class="tab" type="button" data-go="s3">3 It's / They're</button>
+    </div>
+    <button class="snd" id="snd" type="button" aria-pressed="true"><span id="sndIcon"></span><span id="sndTxt">聲音開</span></button>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <h1>恐龍<span class="hl">數數</span>樂園</h1>
+      <p class="lead">戴眼鏡的數數龍愛數數，單車龍一次騎好幾台。跟著牠們闖三關，就會分 one 和 many many。點喇叭可以聽發音。</p>
+    </div>
+    <div class="scene wide" id="heroArt" role="img" aria-label="數數龍拿著一塊積木，單車龍騎著好幾台腳踏車"></div>
+  </header>
+
+  <section class="stage" id="s1">
+    <h2 class="stage-title"><span class="badge">1</span><span>先學會 <em class="one-t">1 個</em> 和 <em class="many-t">many many</em> 的差別</span></h2>
+    <div class="pair">
+      <article class="panel">
+        <div class="scene" id="countScene" role="img" aria-label="數數龍拿著一塊積木"></div>
+        <div class="tray" id="tray"></div>
+        <div class="say">
+          <span class="count" id="blkCount">1</span>
+          <div class="say-text"><div class="say-en one-t" id="blkEn">One block.</div><div class="say-zh" id="blkZh">1 個就是 <b>one</b></div></div>
+          <button class="spk" type="button" data-from="blkEn" aria-label="聽發音"></button>
+        </div>
+        <div class="row">
+          <button class="btn one" id="blkAdd" type="button">再放一塊</button>
+          <button class="btn ghost" id="blkReset" type="button">重來</button>
+        </div>
+      </article>
+      <article class="panel">
+        <div class="scene" id="bikeScene" role="img" aria-label="單車龍騎著腳踏車"></div>
+        <div class="say">
+          <span class="count" id="bikeCount">1</span>
+          <div class="say-text"><div class="say-en one-t" id="bikeEn">One bike.</div><div class="say-zh" id="bikeZh">1 個就是 <b>one</b></div></div>
+          <button class="spk" type="button" data-from="bikeEn" aria-label="聽發音"></button>
+        </div>
+        <div class="row">
+          <button class="btn" id="bikeAdd" type="button">再騎一台</button>
+          <button class="btn ghost" id="bikeReset" type="button">重來</button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="stage" id="s2">
+    <h2 class="stage-title"><span class="badge">2</span><span>玩遊戲：找一找</span></h2>
+    <div class="panel game">
+      <div class="game-top"><span id="g2prog">第 1 / 11 題</span><span class="stars" id="g2stars">★ 0</span></div>
+      <p class="ask" id="g2ask">看看這隻恐龍在做什麼，圖裡是 <b class="one-t">1 個</b>，還是 <b class="many-t">many many</b>？</p>
+      <div class="scene big" id="g2scene" role="img" aria-label="一隻恐龍在做怪事"></div>
+      <div class="choices" id="g2choices">
+        <button class="choice c-one" type="button" data-many="0"><span class="mini"><i></i></span><span class="big">1 個</span><span class="sub">one</span></button>
+        <button class="choice c-many" type="button" data-many="1"><span class="mini"><i></i><i></i><i></i><i></i><i></i></span><span class="big">many many</span><span class="sub">很多個</span></button>
+      </div>
+      <div class="result" id="g2res" aria-live="polite"></div>
+      <button class="btn next" id="g2next" type="button" hidden>下一題</button>
+    </div>
+    <h3 class="sub-title">我的恐龍卡片</h3>
+    <div class="album" id="album"></div>
+  </section>
+
+  <section class="stage" id="s3">
+    <h2 class="stage-title"><span class="badge">3</span><span><em class="one-t">1 個</em> 要用 <em class="one-t">It's</em>，<em class="many-t">many many</em> 要用 <em class="many-t">They're</em></span></h2>
+    <div class="pair">
+      <article class="panel rule">
+        <div class="scene" id="ruleOne" role="img" aria-label="數數龍拿著一塊積木"></div>
+        <div class="bubble">1 個東西要用 <b class="one-t">It's</b>。</div>
+        <div class="row"><span class="sentence one-t" id="ruleOneEn">It's a block.</span><button class="spk" type="button" data-from="ruleOneEn" aria-label="聽發音"></button></div>
+      </article>
+      <article class="panel rule">
+        <div class="scene" id="ruleMany" role="img" aria-label="單車龍騎著很多台腳踏車"></div>
+        <div class="bubble">many many 的東西要用 <b class="many-t">They're</b>。</div>
+        <div class="row"><span class="sentence many-t" id="ruleManyEn">They're bikes.</span><button class="spk" type="button" data-from="ruleManyEn" aria-label="聽發音"></button></div>
+      </article>
+    </div>
+    <h3 class="sub-title">小遊戲：選一選（It's or They're）</h3>
+    <div class="quiz" id="quiz"></div>
+    <p class="qdone" id="qdone" hidden>6 題全部答對！你學會 It's 和 They're 了。</p>
+  </section>
+</main>
+
+<script>
+(function(){
+  var $=function(s,r){return (r||document).querySelector(s)};
+  var SPK='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+
+  /* ---------- sound ---------- */
+  var soundOn=true, ac=null;
+  function say(t){
+    if(!soundOn) return;
+    try{var u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.85;u.pitch=1.15;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}
+  }
+  function tone(seq){
+    if(!soundOn) return;
+    try{
+      ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+      var t=ac.currentTime;
+      seq.forEach(function(p){
+        var o=ac.createOscillator(),g=ac.createGain();
+        o.type='triangle';o.frequency.value=p[0];
+        g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.16,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+p[1]);
+        o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+p[1]+.03);t+=p[1]*.9;
+      });
+    }catch(e){}
+  }
+  function good(){tone([[660,.12],[880,.12],[1175,.22]])}
+  function bad(){tone([[300,.14],[220,.24]])}
+
+  /* ---------- drawing helpers ---------- */
+  var INK='#2B2140';
+  var C={
+    green:{b:'#5CC24F',v:'#DDF6B8',s:'#F2B63D'},
+    blue:{b:'#4AA3EB',v:'#D3ECFF',s:'#F2705A'},
+    purple:{b:'#9A6EE0',v:'#E7DBFF',s:'#FFC933'},
+    pink:{b:'#F37FB1',v:'#FFDDEB',s:'#7C5BD6'},
+    orange:{b:'#F58A3C',v:'#FFE1BF',s:'#3FA7D6'},
+    yellow:{b:'#F7C531',v:'#FFF1B5',s:'#EF6C4D'},
+    teal:{b:'#2FBFB0',v:'#CFF5EF',s:'#F2705A'},
+    coral:{b:'#F26A5B',v:'#FFD9D0',s:'#FFC933'},
+    lime:{b:'#9CCB3B',v:'#EEF8CF',s:'#EF6C4D'}
+  };
+  function svg(inner,vb){return '<svg viewBox="'+(vb||'0 0 240 200')+'" aria-hidden="true" preserveAspectRatio="xMidYMax meet">'+inner+'</svg>'}
+  function sh(cx,cy,rx){return '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+(rx*.12)+'" fill="#1B5E20" opacity=".18"/>'}
+  function line(x1,y1,x2,y2,col,w){return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+col+'" stroke-width="'+w+'" stroke-linecap="round"/>'}
+
+  function dino(c,o){
+    o=o||{};
+    var eye=function(x){return '<circle cx="'+x+'" cy="75" r="11.5" fill="#fff"/><circle cx="'+(x+2)+'" cy="77" r="6" fill="'+INK+'"/><circle cx="'+(x+4)+'" cy="74.5" r="2.2" fill="#fff"/>'};
+    var mouth='<path d="M88 99 Q100 109 112 99" stroke="'+INK+'" stroke-width="3.5" fill="none" stroke-linecap="round"/>';
+    if(o.mouth==='open') mouth='<path d="M86 96 Q100 124 114 96 Z" fill="#7A2840"/><ellipse cx="100" cy="109" rx="7" ry="4" fill="#FF8FA3"/>';
+    if(o.mouth==='o') mouth='<ellipse cx="100" cy="104" rx="5" ry="6" fill="#7A2840"/>';
+    var glasses='';
+    if(o.glasses){
+      glasses='<circle cx="80" cy="75" r="16" fill="#fff" fill-opacity=".28" stroke="'+INK+'" stroke-width="4"/><circle cx="120" cy="75" r="16" fill="#fff" fill-opacity=".28" stroke="'+INK+'" stroke-width="4"/>'+
+        '<path d="M95 73 Q100 69 105 73" stroke="'+INK+'" stroke-width="4" fill="none"/><path d="M64 72 L55 66 M136 72 L145 66" stroke="'+INK+'" stroke-width="4" stroke-linecap="round"/>';
+    }
+    return '<g>'+
+      '<path d="M58 140 C32 154 12 142 8 116 C26 128 42 128 64 118 Z" fill="'+c.b+'"/>'+
+      '<polygon points="64,56 70,32 88,48" fill="'+c.s+'"/><polygon points="88,44 100,16 114,42" fill="'+c.s+'"/><polygon points="112,48 128,28 138,58" fill="'+c.s+'"/>'+
+      '<ellipse cx="100" cy="138" rx="50" ry="42" fill="'+c.b+'"/>'+
+      '<ellipse cx="104" cy="148" rx="30" ry="29" fill="'+c.v+'"/>'+
+      '<rect x="70" y="164" width="22" height="26" rx="11" fill="'+c.b+'"/><rect x="108" y="164" width="22" height="26" rx="11" fill="'+c.b+'"/>'+
+      '<ellipse cx="55" cy="140" rx="9" ry="15" transform="rotate(18 55 140)" fill="'+c.b+'"/><ellipse cx="145" cy="140" rx="9" ry="15" transform="rotate(-18 145 140)" fill="'+c.b+'"/>'+
+      '<ellipse cx="100" cy="80" rx="48" ry="41" fill="'+c.b+'"/>'+
+      '<ellipse cx="100" cy="97" rx="27" ry="16" fill="'+c.v+'" opacity=".9"/>'+
+      '<circle cx="93" cy="90" r="1.8" fill="'+INK+'" opacity=".5"/><circle cx="107" cy="90" r="1.8" fill="'+INK+'" opacity=".5"/>'+
+      '<circle cx="64" cy="92" r="7" fill="#FF8FA3" opacity=".55"/><circle cx="136" cy="92" r="7" fill="#FF8FA3" opacity=".55"/>'+
+      eye(80)+eye(120)+glasses+mouth+'</g>';
+  }
+  function D(c,o,tx,ty,s){return '<g transform="translate('+tx+' '+ty+') scale('+s+')">'+dino(c,o)+'</g>'}
+
+  function cube(x,y,s,col,t){
+    var d=s*.28;
+    return '<g>'+
+      '<polygon points="'+x+','+y+' '+(x+d)+','+(y-d)+' '+(x+s+d)+','+(y-d)+' '+(x+s)+','+y+'" fill="'+col+'"/>'+
+      '<polygon points="'+x+','+y+' '+(x+d)+','+(y-d)+' '+(x+s+d)+','+(y-d)+' '+(x+s)+','+y+'" fill="#fff" opacity=".35"/>'+
+      '<polygon points="'+(x+s)+','+y+' '+(x+s+d)+','+(y-d)+' '+(x+s+d)+','+(y+s-d)+' '+(x+s)+','+(y+s)+'" fill="'+col+'"/>'+
+      '<polygon points="'+(x+s)+','+y+' '+(x+s+d)+','+(y-d)+' '+(x+s+d)+','+(y+s-d)+' '+(x+s)+','+(y+s)+'" fill="#000" opacity=".22"/>'+
+      '<rect x="'+x+'" y="'+y+'" width="'+s+'" height="'+s+'" rx="'+(s*.08)+'" fill="'+col+'"/>'+
+      '<text x="'+(x+s/2)+'" y="'+(y+s*.72)+'" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="'+(s*.6)+'" fill="#fff">'+t+'</text></g>';
+  }
+
+  function bike(x,y,s,c){
+    var r=20*s,W=4*s,k='#2B2140';
+    var P=function(a,b){return [x+a*s,y-b*s]};
+    var rear=[x,y],bb=P(24,0),seat=P(16,34),head=P(44,32),front=P(52,0),h1=P(46,42),h2=P(57,42);
+    var L=function(p,q,col,w){return line(p[0],p[1],q[0],q[1],col,w)};
+    return '<g>'+
+      '<circle cx="'+rear[0]+'" cy="'+rear[1]+'" r="'+r+'" fill="#fff" fill-opacity=".3" stroke="'+k+'" stroke-width="'+W+'"/>'+
+      '<circle cx="'+front[0]+'" cy="'+front[1]+'" r="'+r+'" fill="#fff" fill-opacity=".3" stroke="'+k+'" stroke-width="'+W+'"/>'+
+      L(rear,bb,c,W)+L(bb,seat,c,W)+L(seat,head,c,W)+L(bb,head,c,W)+L(head,front,c,W)+L(rear,seat,c,W)+
+      L(head,h1,k,W*.8)+L(h1,h2,k,W*.9)+L(P(8,37),P(22,37),k,W*1.3)+
+      '<circle cx="'+bb[0]+'" cy="'+bb[1]+'" r="'+(3.5*s)+'" fill="'+k+'"/><circle cx="'+rear[0]+'" cy="'+rear[1]+'" r="'+(2.5*s)+'" fill="'+k+'"/><circle cx="'+front[0]+'" cy="'+front[1]+'" r="'+(2.5*s)+'" fill="'+k+'"/></g>';
+  }
+  function bikes(n){
+    var sb=1.1,bc=['#F7C531','#1F78E0','#F37FB1','#43B05C','#EF6C4D'];
+    var x0=120-((n-1)*12+28.5),o=sh(120,192,98),lx=0,ly=0;
+    for(var i=0;i<n;i++){var x=x0+i*24,y=170-i*15;o+=bike(x,y,sb,bc[i]);lx=x;ly=y;}
+    var sx=lx+16*sb,sy=ly-34*sb,tx=sx-40,ty=sy-66;
+    o+=D(C.purple,{mouth:'open'},tx,ty,.4);
+    o+=line(lx+35.6,ly-47,lx+57*sb,ly-42*sb,C.purple.b,5);
+    return o;
+  }
+
+  function ladybug(x,y,s){
+    return '<g transform="translate('+x+' '+y+') scale('+s+')"><ellipse rx="13" ry="11" fill="#E53935"/><path d="M-1 -11 V11" stroke="#222" stroke-width="1.8"/>'+
+      '<circle cx="-6" cy="-4" r="2.4" fill="#222"/><circle cx="-6" cy="5" r="2.4" fill="#222"/><circle cx="5" cy="-4" r="2.4" fill="#222"/><circle cx="5" cy="4" r="2.4" fill="#222"/>'+
+      '<circle cx="14" cy="0" r="5" fill="#222"/><path d="M17 -3 l5 -6 M17 3 l5 6" stroke="#222" stroke-width="1.6" stroke-linecap="round"/></g>';
+  }
+  function car(x,y,c,s){
+    return '<g transform="translate('+x+' '+y+') scale('+s+')"><rect x="0" y="-22" width="52" height="14" rx="5" fill="'+c+'"/><path d="M10 -22 L17 -34 L37 -34 L44 -22Z" fill="'+c+'"/>'+
+      '<path d="M19 -22 L22 -31 L30 -31 L30 -22Z M33 -22 L33 -31 L37 -31 L41 -22Z" fill="#CDEFFF"/>'+
+      '<circle cx="13" cy="-8" r="7" fill="'+INK+'"/><circle cx="39" cy="-8" r="7" fill="'+INK+'"/><circle cx="13" cy="-8" r="2.6" fill="#ddd"/><circle cx="39" cy="-8" r="2.6" fill="#ddd"/></g>';
+  }
+  function hat(cx,base,col,rot){
+    return '<g transform="rotate('+rot+' '+cx+' '+base+')"><rect x="'+(cx-13)+'" y="'+(base-15)+'" width="26" height="15" rx="4" fill="'+col+'"/>'+
+      '<rect x="'+(cx-13)+'" y="'+(base-7)+'" width="26" height="4" fill="#fff" opacity=".55"/>'+
+      '<ellipse cx="'+cx+'" cy="'+base+'" rx="20" ry="4.5" fill="'+col+'"/><ellipse cx="'+cx+'" cy="'+base+'" rx="20" ry="4.5" fill="#000" opacity=".14"/></g>';
+  }
+  function sock(x,y,c){
+    return '<g><path d="M'+(x-9)+' '+y+' h18 v22 l12 8 q6 10 -4 12 h-22 q-4 -2 -4 -8 Z" fill="'+c+'"/>'+
+      '<rect x="'+(x-9)+'" y="'+y+'" width="18" height="6" fill="#fff" opacity=".6"/><rect x="'+(x-9)+'" y="'+(y+12)+'" width="18" height="4" fill="#fff" opacity=".35"/>'+
+      '<rect x="'+(x-3)+'" y="'+(y-8)+'" width="6" height="14" rx="2" fill="#B07C3F"/></g>';
+  }
+  function pent(cx,cy,r){
+    var p=[];for(var i=0;i<5;i++){var a=(-90+i*72)*Math.PI/180;p.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1))}
+    return p.join(' ');
+  }
+
+  /* ---------- scenes ---------- */
+  var SC={};
+  SC.count=function(){
+    return sh(100,171,74)+cube(196,150,22,'#E67E22','5')+cube(196,128,22,'#1F78E0','2')+
+      D(C.green,{glasses:1,mouth:'open'},14,14,.82)+
+      line(132,128,152,118,C.green.b,13)+cube(148,88,40,'#D63A6C','1');
+  };
+  SC.bikes4=function(){return bikes(4)};
+  SC.bike1=function(){return bikes(1)};
+  SC.box=function(){
+    return sh(120,176,76)+D(C.orange,{mouth:'open'},40,38,.8)+
+      '<ellipse cx="82" cy="112" rx="11" ry="8" fill="'+C.orange.b+'"/><ellipse cx="158" cy="112" rx="11" ry="8" fill="'+C.orange.b+'"/>'+
+      '<polygon points="52,112 38,92 80,100 84,112" fill="#E8BC85" stroke="#A8763A" stroke-width="3" stroke-linejoin="round"/>'+
+      '<polygon points="188,112 202,92 160,100 156,112" fill="#E8BC85" stroke="#A8763A" stroke-width="3" stroke-linejoin="round"/>'+
+      '<rect x="52" y="112" width="136" height="62" rx="3" fill="#D9A66B" stroke="#A8763A" stroke-width="3"/>'+
+      '<rect x="112" y="112" width="16" height="26" fill="#F2D9A8"/>';
+  };
+  SC.icecream=function(){
+    return sh(96,167,70)+D(C.blue,{mouth:'open'},14,12,.8)+
+      '<circle cx="97" cy="88" r="5" fill="#FFB3CC"/>'+
+      line(132,124,164,112,C.blue.b,13)+
+      '<polygon points="150,110 178,110 164,152" fill="#E8B15E"/><path d="M154 118 L174 118 M158 128 L170 128 M161 138 L167 138" stroke="#C98B3A" stroke-width="2"/>'+
+      '<circle cx="164" cy="98" r="19" fill="#FFB3CC"/><path d="M146 104 q-2 14 6 12 q5 -5 3 -12z M172 108 q-1 12 6 10 q4 -4 1 -10z" fill="#FFB3CC"/>'+
+      '<circle cx="164" cy="76" r="6" fill="#E53935"/><path d="M164 70 q4 -10 10 -10" stroke="#3C8D40" stroke-width="2" fill="none"/>';
+  };
+  SC.hats=function(){
+    var cols=['#EF5350','#FFCA28','#42A5F5','#66BB6A','#AB47BC','#FF7043'],h='';
+    for(var i=0;i<6;i++){h+=hat(120+(i%2?5:-5),92-i*13,cols[i],i%2?5:-5)}
+    return sh(120,190,62)+D(C.pink,{mouth:'open'},50,58,.7)+h;
+  };
+  SC.bikes=SC.bikes4;
+  SC.bug=function(){
+    return sh(100,167,68)+D(C.teal,{mouth:'o'},8,22,.75)+
+      line(118,128,153,144,'#7A5230',7)+
+      '<circle cx="172" cy="140" r="24" fill="#D9F3FF" fill-opacity=".6" stroke="#7A5230" stroke-width="6"/>'+ladybug(170,142,1.2);
+  };
+  SC.balloons=function(){
+    var bs=[[150,58,'#EF5350'],[176,34,'#FFCA28'],[204,30,'#42A5F5'],[222,62,'#F48FB1'],[196,86,'#66BB6A'],[162,92,'#AB47BC']],s='',b='';
+    bs.forEach(function(p){
+      s+=line(p[0],p[1]+19,132,126,'#6B6B80',1.3);
+      b+='<g><ellipse cx="'+p[0]+'" cy="'+p[1]+'" rx="15" ry="18" fill="'+p[2]+'"/><polygon points="'+(p[0]-3)+','+(p[1]+18)+' '+(p[0]+3)+','+(p[1]+18)+' '+p[0]+','+(p[1]+23)+'" fill="'+p[2]+'"/>'+
+        '<ellipse cx="'+(p[0]-5)+'" cy="'+(p[1]-7)+'" rx="3.5" ry="6" fill="#fff" opacity=".45" transform="rotate(20 '+(p[0]-5)+' '+(p[1]-7)+')"/></g>';
+    });
+    return sh(88,168,62)+s+D(C.yellow,{mouth:'open'},20,24,.75)+'<circle cx="132" cy="127" r="7" fill="'+C.yellow.b+'"/>'+b;
+  };
+  SC.book=function(){
+    return sh(120,169,66)+D(C.coral,{mouth:'smile'},40,16,.8)+
+      '<g transform="rotate(-7 120 130)"><rect x="90" y="96" width="60" height="68" rx="5" fill="#3F7DD8"/><rect x="90" y="96" width="9" height="68" rx="3" fill="#2A5CA8"/>'+
+      '<rect x="104" y="108" width="38" height="5" rx="2.5" fill="#fff" opacity=".9"/><rect x="104" y="118" width="28" height="5" rx="2.5" fill="#fff" opacity=".7"/>'+
+      '<circle cx="123" cy="143" r="9" fill="#FFC933"/><rect x="92" y="162" width="58" height="4" fill="#FFF8E1"/></g>'+
+      '<ellipse cx="88" cy="140" rx="11" ry="9" fill="'+C.coral.b+'"/><ellipse cx="154" cy="134" rx="11" ry="9" fill="'+C.coral.b+'"/>';
+  };
+  SC.socks=function(){
+    var xs=[18,52,86,154,188,222],ys=[39.2,45.2,48.8,48.8,45.2,39.2],cols=['#EF5350','#FFCA28','#42A5F5','#66BB6A','#AB47BC','#FF7043'],s='';
+    xs.forEach(function(x,i){s+=sock(x,ys[i],cols[i])});
+    return sh(120,186,60)+'<path d="M-4 34 Q120 66 244 34" stroke="#8D6E3F" stroke-width="3" fill="none"/>'+s+D(C.lime,{mouth:'open'},54,60,.66);
+  };
+  SC.ball=function(){
+    var cx=120,cy=146,r=34,sp='';
+    for(var i=0;i<5;i++){var a=(-90+i*72)*Math.PI/180;sp+=line((cx+11*Math.cos(a)).toFixed(1),(cy+11*Math.sin(a)).toFixed(1),(cx+r*Math.cos(a)).toFixed(1),(cy+r*Math.sin(a)).toFixed(1),INK,2)}
+    return sh(120,182,60)+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#fff" stroke="'+INK+'" stroke-width="3"/>'+sp+'<polygon points="'+pent(cx,cy,11)+'" fill="'+INK+'"/>'+
+      line(100,92,70,70,C.blue.b,9)+line(140,92,170,70,C.blue.b,9)+D(C.blue,{mouth:'open'},65,10,.55);
+  };
+  SC.cars=function(){
+    return sh(112,170,80)+D(C.orange,{mouth:'open'},56,40,.68)+
+      '<g transform="rotate(-22 70 116)">'+car(48,118,'#FFCA28',.7)+'</g>'+
+      car(98,70,'#E53935',.8)+car(106,43,'#42A5F5',.6)+car(6,177,'#66BB6A',.9)+car(172,179,'#AB47BC',.9);
+  };
+  SC.umbrella=function(){
+    var rain='',pts=[[26,12],[44,24],[62,8],[78,30],[34,46],[58,56],[18,66],[222,20],[230,50],[216,86]];
+    pts.forEach(function(p){rain+=line(p[0],p[1],p[0]-4,p[1]+11,'#4A90E2',2.5)});
+    return sh(100,170,62)+rain+D(C.purple,{mouth:'smile'},14,32,.72)+
+      line(122,133,150,128,C.purple.b,11)+
+      '<path d="M96 72 Q150 4 204 72 Q190 62 177 72 Q164 62 150 72 Q136 62 123 72 Q110 62 96 72 Z" fill="#EF5350"/>'+
+      '<path d="M123 70 Q132 34 150 14 L150 70 Z" fill="#fff" opacity=".4"/><path d="M177 70 Q168 34 150 14 L150 70 Z" fill="#fff" opacity=".18"/>'+
+      line(150,72,150,140,'#5D4037',4)+'<path d="M150 140 q0 10 -9 8" stroke="#5D4037" stroke-width="4" fill="none" stroke-linecap="round"/>';
+  };
+
+  /* ---------- nav and sound ---------- */
+  $('#sndIcon').innerHTML=SPK;
+  $('#snd').addEventListener('click',function(){
+    soundOn=!soundOn;this.setAttribute('aria-pressed',String(soundOn));$('#sndTxt').textContent=soundOn?'聲音開':'聲音關';
+    if(!soundOn){try{speechSynthesis.cancel()}catch(e){}}
+  });
+  document.querySelectorAll('[data-go]').forEach(function(b){
+    b.addEventListener('click',function(){var t=document.getElementById(b.dataset.go);if(t)t.scrollIntoView({behavior:'smooth',block:'start'})});
+  });
+  document.querySelectorAll('.spk').forEach(function(b){b.innerHTML=SPK});
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('.spk');
+    if(!b) return;
+    var t=b.dataset.say||(b.dataset.from&&document.getElementById(b.dataset.from).textContent);
+    if(t) say(t);
+  });
+  function spkBtn(t){return '<button class="spk" type="button" data-say="'+t.replace(/"/g,'&quot;')+'" aria-label="聽發音">'+SPK+'</button>'}
+  function restartAnim(el,cls){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls)}
+
+  /* ---------- hero and rules ---------- */
+  $('#heroArt').innerHTML=svg(SC.count()+'<g transform="translate(240 0)">'+SC.bikes4()+'</g>','0 0 480 200');
+  $('#countScene').innerHTML=svg(SC.count());
+  $('#ruleOne').innerHTML=svg(SC.count());
+  $('#ruleMany').innerHTML=svg(SC.bikes4());
+
+  /* ---------- stage 1 ---------- */
+  var NUM=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+  var BCOL=['#D63A6C','#1F78E0','#278A41','#8A5CD6','#D96A12','#C2306A'];
+  var blocks=1,nb=1;
+  function setSay(prefix,many,en1,en2){
+    var en=$('#'+prefix+'En'),zh=$('#'+prefix+'Zh');
+    en.textContent=many?en2:en1;
+    en.className='say-en '+(many?'many-t':'one-t');
+    zh.innerHTML=many?'很多就是 <b>many many</b>':'1 個就是 <b>one</b>';
+  }
+  function renderBlocks(){
+    var tray=$('#tray');tray.innerHTML='';
+    for(var i=0;i<blocks;i++){
+      var d=document.createElement('div');d.className='blk'+(i===blocks-1?' pop':'');d.style.background=BCOL[i%BCOL.length];d.textContent=i+1;tray.appendChild(d);
+    }
+    $('#blkCount').textContent=blocks;
+    setSay('blk',blocks>1,'One block.','Many many blocks.');
+    $('#blkAdd').disabled=blocks>=12;
+    $('#blkAdd').textContent=blocks>=12?'滿了':'再放一塊';
+  }
+  function renderBikes(){
+    $('#bikeScene').innerHTML=svg(bikes(nb));
+    $('#bikeCount').textContent=nb;
+    setSay('bike',nb>1,'One bike.','Many many bikes.');
+    $('#bikeAdd').disabled=nb>=5;
+    $('#bikeAdd').textContent=nb>=5?'騎滿了':'再騎一台';
+  }
+  $('#blkAdd').addEventListener('click',function(){if(blocks<12){blocks++;renderBlocks();say(NUM[blocks])}});
+  $('#blkReset').addEventListener('click',function(){blocks=1;renderBlocks()});
+  $('#bikeAdd').addEventListener('click',function(){if(nb<5){nb++;renderBikes();say(NUM[nb]);restartAnim($('#bikeScene'),'hop')}});
+  $('#bikeReset').addEventListener('click',function(){nb=1;renderBikes()});
+  renderBlocks();renderBikes();
+
+  /* ---------- stage 2 ---------- */
+  var ITEMS=[
+    {k:'box',en:'a box',many:false},{k:'icecream',en:'an ice cream',many:false},{k:'hats',en:'many many hats',many:true},
+    {k:'bikes',en:'many many bikes',many:true},{k:'bug',en:'a bug',many:false},{k:'balloons',en:'many many balloons',many:true},
+    {k:'book',en:'a book',many:false},{k:'socks',en:'many many socks',many:true},{k:'ball',en:'a ball',many:false},
+    {k:'cars',en:'many many cars',many:true},{k:'umbrella',en:'an umbrella',many:false}
+  ];
+  function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+  var order=[],qi=0,stars=0,got={},firstTry=true,locked=false,finished=false;
+  function renderStars(){$('#g2stars').textContent='★ '+stars}
+  function renderAlbum(){
+    var h='';
+    ITEMS.forEach(function(it,i){
+      if(got[i]) h+='<button class="slot" type="button" data-say="'+it.en+'" aria-label="'+it.en+'"><div class="scene">'+svg(SC[it.k]())+'</div><span class="cap">'+it.en+'</span></button>';
+      else h+='<div class="slot lock" aria-label="還沒找到"><div class="ph">?</div><span class="cap">&nbsp;</span></div>';
+    });
+    $('#album').innerHTML=h;
+  }
+  $('#album').addEventListener('click',function(e){var b=e.target.closest('.slot[data-say]');if(b)say(b.dataset.say)});
+  function showQ(){
+    firstTry=true;locked=false;finished=false;
+    var it=ITEMS[order[qi]];
+    $('#g2scene').innerHTML=svg(SC[it.k]());
+    $('#g2choices').hidden=false;$('#g2ask').hidden=false;
+    $('#g2res').innerHTML='';
+    var nx=$('#g2next');nx.hidden=true;nx.textContent='下一題';
+    $('#g2prog').textContent='第 '+(qi+1)+' / '+ITEMS.length+' 題';
+    renderStars();
+  }
+  function startG2(){order=shuffle(ITEMS.map(function(_,i){return i}));qi=0;stars=0;got={};showQ();renderAlbum()}
+  function answer(many){
+    if(locked||finished) return;
+    var idx=order[qi],it=ITEMS[idx];
+    if(many===it.many){
+      locked=true;good();say(it.en);
+      if(firstTry) stars++;
+      got[idx]=true;renderStars();renderAlbum();
+      $('#g2res').innerHTML='<span class="ok-mark">答對了！</span><b class="lbl '+(it.many?'many':'one')+'">'+it.en+'</b>'+spkBtn(it.en);
+      restartAnim($('#g2scene'),'hop');
+      var nx=$('#g2next');nx.textContent=qi+1>=ITEMS.length?'看成績':'下一題';nx.hidden=false;
+    }else{
+      firstTry=false;bad();
+      $('#g2res').innerHTML='<span class="hint">再數數看喔，圖裡有幾個？</span>';
+      restartAnim($('#g2scene'),'shake');
+    }
+  }
+  document.querySelectorAll('#g2choices .choice').forEach(function(b){
+    b.addEventListener('click',function(){answer(b.dataset.many==='1')});
+  });
+  $('#g2next').addEventListener('click',function(){
+    if(finished){startG2();return}
+    qi++;
+    if(qi<ITEMS.length){showQ();return}
+    finished=true;
+    $('#g2choices').hidden=true;$('#g2ask').hidden=true;
+    $('#g2scene').innerHTML=svg(SC.count());
+    $('#g2res').innerHTML='<span class="ok-mark">11 張卡片全部找到了！第一次就答對 '+stars+' 題。</span>';
+    var nx=$('#g2next');nx.textContent='再玩一次';nx.hidden=false;
+    $('#g2prog').textContent='完成';
+    good();restartAnim($('#g2scene'),'hop');
+  });
+  startG2();
+
+  /* ---------- stage 3 ---------- */
+  var Q3=[
+    {k:'bike1',en:'a bike',many:false},{k:'hats',en:'many many hats',many:true},{k:'book',en:'a book',many:false},
+    {k:'cars',en:'many many cars',many:true},{k:'ball',en:'a ball',many:false},{k:'balloons',en:'many many balloons',many:true}
+  ];
+  var q3done=0;
+  function sentence(q){return q.many?"They're "+q.en.replace('many many ','')+'.':"It's "+q.en+'.'}
+  var qh='';
+  Q3.forEach(function(q,i){
+    qh+='<article class="q" data-i="'+i+'"><div class="scene" role="img" aria-label="一張恐龍圖片">'+svg(SC[q.k]())+'</div>'+
+      '<div class="qbtns"><button class="btn tiny one" type="button" data-a="its">It\'s</button><button class="btn tiny" type="button" data-a="theyre">They\'re</button></div>'+
+      '<p class="qres" aria-live="polite"></p></article>';
+  });
+  $('#quiz').innerHTML=qh;
+  $('#quiz').addEventListener('click',function(e){
+    var b=e.target.closest('.qbtns .btn');
+    if(!b||b.disabled) return;
+    var card=b.closest('.q'),q=Q3[+card.dataset.i],res=$('.qres',card);
+    var pickMany=b.dataset.a==='theyre';
+    if(pickMany===q.many){
+      var s=sentence(q);
+      card.classList.add('ok');
+      card.querySelectorAll('.qbtns .btn').forEach(function(x){x.disabled=true});
+      res.className='qres good';res.innerHTML='<span>'+s+'</span>'+spkBtn(s);
+      good();say(s);restartAnim($('.scene',card),'hop');
+      q3done++;
+      if(q3done===Q3.length) $('#qdone').hidden=false;
+    }else{
+      bad();res.className='qres bad';res.textContent='再想想，圖裡是 1 個還是很多個？';
+      restartAnim(card,'shake');
+    }
+  });
+})();
+</script>
+</body>
+</html>
